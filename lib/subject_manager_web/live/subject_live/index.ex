@@ -2,16 +2,22 @@ defmodule SubjectManagerWeb.SubjectLive.Index do
   use SubjectManagerWeb, :live_view
 
   alias SubjectManager.Subjects
+  alias SubjectManager.Subjects.Subject
   import SubjectManagerWeb.CustomComponents
 
-  def mount(_params, _session, socket) do
+  def mount(query_params, _session, socket) do
     socket =
       socket
       |> assign(page_title: "Subjects")
-      |> assign(subjects: Subjects.list_subjects())
       |> assign(form: to_form(%{}))
 
-    {:ok, socket}
+    case normalize_params(query_params) do
+      {:ok, params} ->
+        {:ok, assign(socket, subjects: Subjects.list_subjects(params))}
+
+      _ ->
+        {:ok, assign(socket, subjects: [])}
+    end
   end
 
   def render(assigns) do
@@ -83,5 +89,24 @@ defmodule SubjectManagerWeb.SubjectLive.Index do
       </.link>
     </.form>
     """
+  end
+
+  defp normalize_params(params) do
+    types = %{
+      q: :string,
+      sort_by: Ecto.ParameterizedType.init(Ecto.Enum, values: [:name, :team, :position]),
+      position:
+        Ecto.ParameterizedType.init(Ecto.Enum, values: Ecto.Enum.values(Subject, :position))
+    }
+
+    permitted = Map.keys(types)
+
+    changeset = Ecto.Changeset.cast({%{}, types}, params, permitted)
+
+    if changeset.valid? do
+      {:ok, Map.new(permitted, &{&1, Ecto.Changeset.get_change(changeset, &1)})}
+    else
+      :error
+    end
   end
 end

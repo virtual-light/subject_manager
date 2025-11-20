@@ -2,6 +2,9 @@ defmodule SubjectManager.Subjects.Subject do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{}
+  @type(position :: :forward, :midfielder, :winger, :defender, :goalkeeper)
+
   schema "subjects" do
     field :name, :string
     field :team, :string
