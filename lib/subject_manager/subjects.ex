@@ -11,6 +11,9 @@ defmodule SubjectManager.Subjects do
           position: Subject.position() | nil
         }
 
+  @spec get!(Subject.id()) :: Subject.t()
+  def get!(id), do: Repo.get!(Subject, id)
+
   @spec list_subjects(params()) :: [Subject.t()]
   def list_subjects(params) do
     from(s in Subject)

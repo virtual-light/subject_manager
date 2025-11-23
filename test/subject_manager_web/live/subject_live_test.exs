@@ -141,6 +141,40 @@ defmodule SubjectManagerWeb.SubjectLiveTest do
     end
   end
 
+  describe "show subject" do
+    test "renders expected subject's fields", %{conn: conn} do
+      subject = insert_subject!()
+      conn = get(conn, "/subjects/#{subject.id}")
+
+      {:ok, _view, html} = live(conn)
+
+      assert Map.take(subject, [:name, :team, :position]) == parse_subject(html)
+    end
+
+    test "renders back to subjects", %{conn: conn} do
+      %{id: id} = insert_subject!()
+      conn = get(conn, "/subjects/#{id}")
+
+      {:ok, view, _html} = live(conn)
+
+      assert has_element?(view, "a", "Back")
+
+      view
+      |> element("a", "Back")
+      |> render_click()
+
+      assert_redirected(view, "/subjects")
+    end
+
+    test "returns 404 for non-existing id", %{conn: conn} do
+      assert_error_sent :not_found, fn -> get(conn, "/subjects/#{unknown_id()}") end
+    end
+
+    test "returns 400 for invalid id", %{conn: conn} do
+      assert_error_sent :bad_request, fn -> get(conn, "/subjects/12fail34}") end
+    end
+  end
+
   defp parse_subjects(html) do
     cards = Floki.find(html, ".card")
 
@@ -154,6 +188,24 @@ defmodule SubjectManagerWeb.SubjectLiveTest do
         position: position_block |> Floki.text() |> String.trim() |> String.to_existing_atom()
       }
     end)
+  end
+
+  defp parse_subject(html) do
+    [{"div", _, [_img, list]}] = Floki.find(html, ".subject")
+
+    parsed =
+      list
+      |> Floki.find(".flex")
+      |> Map.new(fn div ->
+        [name, value] = Floki.children(div)
+        {Floki.text(name), Floki.text(value)}
+      end)
+
+    %{
+      name: Map.fetch!(parsed, "Name"),
+      team: Map.fetch!(parsed, "Team"),
+      position: parsed |> Map.fetch!("Position") |> String.to_existing_atom()
+    }
   end
 
   defp insert_subject!(opts \\ nil) do
@@ -180,4 +232,7 @@ defmodule SubjectManagerWeb.SubjectLiveTest do
   end
 
   defp unique_positive_integer, do: :erlang.unique_integer([:positive, :monotonic])
+
+  # the largest INTEGER
+  defp unknown_id, do: 9_223_372_036_854_775_807
 end
