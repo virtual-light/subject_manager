@@ -5,7 +5,7 @@ defmodule SubjectManager.Subjects.Subject do
   @type t :: %__MODULE__{}
   @type id :: pos_integer()
 
-  @type(position :: :forward, :midfielder, :winger, :defender, :goalkeeper)
+  @type position :: :forward | :midfielder | :winger | :defender | :goalkeeper
 
   schema "subjects" do
     field :name, :string
