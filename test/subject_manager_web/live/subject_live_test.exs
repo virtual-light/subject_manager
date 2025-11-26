@@ -1,27 +1,27 @@
 defmodule SubjectManagerWeb.SubjectLiveTest do
   use SubjectManagerWeb.ConnCase, async: true
-  import Phoenix.LiveViewTest
 
-  alias SubjectManager.Subjects.Subject
+  import Phoenix.LiveViewTest
+  import SubjectManagerWeb.SubjectLiveHelper
 
   describe "subjects list" do
     test "renders expected subjects", %{conn: conn} do
-      subjects = [insert_subject!(), insert_subject!()]
+      subjects = [create_subject!(conn), create_subject!(conn)]
 
       conn = get(conn, "/subjects")
       {:ok, _view, html} = live(conn)
 
       parsed_subjects = parse_subjects(html)
 
-      assert MapSet.new(subjects, &Map.take(&1, [:name, :team, :position])) ==
+      assert MapSet.new(subjects, &Map.take(&1, [:name, :team, :position, :image_path])) ==
                MapSet.new(parsed_subjects)
     end
 
     test "filtered by position", %{conn: conn} do
       position = :defender
 
-      insert_subject!()
-      insert_subject!(position: position)
+      create_subject!(conn)
+      create_subject!(conn, position: position)
 
       conn = get(conn, "/subjects", position: Atom.to_string(position))
       {:ok, _view, html} = live(conn)
@@ -32,8 +32,8 @@ defmodule SubjectManagerWeb.SubjectLiveTest do
     test "filtered by name", %{conn: conn} do
       name = "FindMe"
 
-      insert_subject!()
-      insert_subject!(name: name)
+      create_subject!(conn)
+      create_subject!(conn, name: name)
 
       conn = get(conn, "/subjects", q: name)
       {:ok, _view, html} = live(conn)
@@ -42,9 +42,9 @@ defmodule SubjectManagerWeb.SubjectLiveTest do
     end
 
     test "search by name", %{conn: conn} do
-      insert_subject!()
-      subject1 = insert_subject!(name: "John Doe")
-      subject2 = insert_subject!(name: "Marry Doe The Second")
+      create_subject!(conn)
+      subject1 = create_subject!(conn, name: "John Doe")
+      subject2 = create_subject!(conn, name: "Marry Doe The Second")
 
       conn = get(conn, "/subjects", q: "Doe")
       {:ok, _view, html} = live(conn)
@@ -60,10 +60,10 @@ defmodule SubjectManagerWeb.SubjectLiveTest do
       name = "FindMe"
       position = :winger
 
-      insert_subject!()
-      insert_subject!(name: name)
-      insert_subject!(position: position)
-      insert_subject!(name: name, position: position)
+      create_subject!(conn)
+      create_subject!(conn, name: name)
+      create_subject!(conn, position: position)
+      create_subject!(conn, name: name, position: position)
 
       conn = get(conn, "/subjects", q: name, position: Atom.to_string(position))
       {:ok, _view, html} = live(conn)
@@ -73,7 +73,7 @@ defmodule SubjectManagerWeb.SubjectLiveTest do
 
     test "ordered by name", %{conn: conn} do
       names = ["Curtis", "Zohran", "Andrew"]
-      Enum.each(names, &insert_subject!(name: &1))
+      Enum.each(names, &create_subject!(conn, name: &1))
 
       conn = get(conn, "/subjects", sort_by: "name")
       {:ok, _view, html} = live(conn)
@@ -84,7 +84,7 @@ defmodule SubjectManagerWeb.SubjectLiveTest do
 
     test "ordered by team", %{conn: conn} do
       teams = ["Red", "Blue", "Purple"]
-      Enum.each(teams, &insert_subject!(team: &1))
+      Enum.each(teams, &create_subject!(conn, team: &1))
 
       conn = get(conn, "/subjects", sort_by: "team")
       {:ok, _view, html} = live(conn)
@@ -95,7 +95,7 @@ defmodule SubjectManagerWeb.SubjectLiveTest do
 
     test "ordered by position", %{conn: conn} do
       positions = [:defender, :winger]
-      Enum.each(positions, &insert_subject!(position: &1))
+      Enum.each(positions, &create_subject!(conn, position: &1))
 
       conn = get(conn, "/subjects", sort_by: "position")
       {:ok, _view, html} = live(conn)
@@ -105,10 +105,10 @@ defmodule SubjectManagerWeb.SubjectLiveTest do
     end
 
     test "filtered by name and ordered by position", %{conn: conn} do
-      insert_subject!()
+      create_subject!(conn)
       params = [%{name: "John Doe", position: :defender}, %{name: "John Cena", position: :winger}]
 
-      Enum.each(params, &insert_subject!(Keyword.new(&1)))
+      Enum.each(params, &create_subject!(conn, Keyword.new(&1)))
 
       conn = get(conn, "/subjects", sort_by: "position", q: "John")
       {:ok, _view, html} = live(conn)
@@ -120,8 +120,8 @@ defmodule SubjectManagerWeb.SubjectLiveTest do
     end
 
     test "empty on incorrect position query param", %{conn: conn} do
-      insert_subject!()
-      insert_subject!(position: :defender)
+      create_subject!(conn)
+      create_subject!(conn, position: :defender)
 
       conn = get(conn, "/subjects", position: "wrong_position_name")
 
@@ -131,7 +131,7 @@ defmodule SubjectManagerWeb.SubjectLiveTest do
     end
 
     test "empty on incorrect sort_by query param", %{conn: conn} do
-      insert_subject!()
+      create_subject!(conn)
 
       conn = get(conn, "/subjects", sort_by: "wrong_sort")
 
@@ -143,16 +143,16 @@ defmodule SubjectManagerWeb.SubjectLiveTest do
 
   describe "show subject" do
     test "renders expected subject's fields", %{conn: conn} do
-      subject = insert_subject!()
+      subject = create_subject!(conn)
       conn = get(conn, "/subjects/#{subject.id}")
 
       {:ok, _view, html} = live(conn)
 
-      assert Map.take(subject, [:name, :team, :position]) == parse_subject(html)
+      assert Map.delete(subject, :id) == parse_subject(html)
     end
 
     test "renders back to subjects", %{conn: conn} do
-      %{id: id} = insert_subject!()
+      %{id: id} = create_subject!(conn)
       conn = get(conn, "/subjects/#{id}")
 
       {:ok, view, _html} = live(conn)
@@ -181,57 +181,16 @@ defmodule SubjectManagerWeb.SubjectLiveTest do
     Enum.map(cards, fn card ->
       children = Floki.children(card)
       [{"div", _, [team_block, position_block]}] = Floki.find(children, ".details")
+      [image_path] = children |> Floki.find("img") |> Floki.attribute("src")
 
       %{
         name: children |> Floki.find("h2") |> Floki.text(),
         team: team_block |> Floki.text() |> String.trim(),
-        position: position_block |> Floki.text() |> String.trim() |> String.to_existing_atom()
+        position: position_block |> Floki.text() |> String.trim() |> String.to_existing_atom(),
+        image_path: image_path
       }
     end)
   end
-
-  defp parse_subject(html) do
-    [{"div", _, [_img, list]}] = Floki.find(html, ".subject")
-
-    parsed =
-      list
-      |> Floki.find(".flex")
-      |> Map.new(fn div ->
-        [name, value] = Floki.children(div)
-        {Floki.text(name), Floki.text(value)}
-      end)
-
-    %{
-      name: Map.fetch!(parsed, "Name"),
-      team: Map.fetch!(parsed, "Team"),
-      position: parsed |> Map.fetch!("Position") |> String.to_existing_atom()
-    }
-  end
-
-  defp insert_subject!(opts \\ nil) do
-    subject = if is_nil(opts), do: subject(), else: subject(opts)
-
-    %Subject{}
-    |> Ecto.Changeset.change(subject)
-    |> SubjectManager.Repo.insert!()
-  end
-
-  defp subject(overrides \\ []) do
-    number = unique_positive_integer()
-
-    Map.merge(
-      %{
-        name: "Name#{number}",
-        team: "Team#{number}",
-        position: :forward,
-        bio: "",
-        image_path: "/images/placeholder.jpg"
-      },
-      Map.new(overrides)
-    )
-  end
-
-  defp unique_positive_integer, do: :erlang.unique_integer([:positive, :monotonic])
 
   # the largest INTEGER
   defp unknown_id, do: 9_223_372_036_854_775_807

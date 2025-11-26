@@ -1,15 +1,10 @@
 defmodule SubjectManagerWeb.SubjectLiveAdminTest do
   use SubjectManagerWeb.ConnCase, async: true
+
   import Phoenix.LiveViewTest
+  import SubjectManagerWeb.SubjectLiveHelper
 
   alias SubjectManager.Subjects
-
-  @labels_to_fields_assoc Map.new(
-                            ~w(name bio team position)a,
-                            &{&1
-                             |> Atom.to_string()
-                             |> String.capitalize(), &1}
-                          )
 
   describe "subjects list" do
     test "renders expected subjects", %{conn: conn} do
@@ -38,7 +33,7 @@ defmodule SubjectManagerWeb.SubjectLiveAdminTest do
 
       assert {:ok, subject} = create_subject_with_params(conn, params)
 
-      assert params == Map.delete(subject, :id)
+      assert params == Map.drop(subject, [:id, :image_path])
     end
 
     @tag :slow
@@ -50,7 +45,7 @@ defmodule SubjectManagerWeb.SubjectLiveAdminTest do
       assert {:ok, {%{image_path: image_path}, file_content}} =
                create_subject_with_upload(conn, params: params)
 
-      assert image_path != params.image_path
+      assert image_path != Subjects.Subject.default_image_path()
 
       assert File.read!(Path.join("priv/static", image_path)) == file_content
     end
@@ -214,21 +209,6 @@ defmodule SubjectManagerWeb.SubjectLiveAdminTest do
     end
   end
 
-  defp subject_params(overrides \\ []) do
-    number = unique_positive_integer()
-
-    Map.merge(
-      %{
-        name: "Name#{number}",
-        team: "Team#{number}",
-        position: :forward,
-        bio: "Bio text",
-        image_path: "/images/placeholder.jpg"
-      },
-      Map.new(overrides)
-    )
-  end
-
   defp list_subjects(conn) do
     conn = get(conn, "/admin/subjects")
     {:ok, _view, html} = live(conn)
@@ -269,59 +249,10 @@ defmodule SubjectManagerWeb.SubjectLiveAdminTest do
          do: {:ok, {subject, file_content}}
   end
 
-  defp create_subject!(conn, params \\ []) do
-    {:ok, subject} = create_subject(conn, params)
-    subject
-  end
-
-  defp create_subject(conn, params) do
-    {view, override} = Keyword.pop(params, :view)
-    create_subject_with_params(conn, subject_params(override), view)
-  end
-
-  defp create_subject_with_params(conn, params, view \\ nil) do
-    view = if is_nil(view), do: new_subject_view(conn), else: view
-
-    case submit_subject(view, params) do
-      {:redirect, redirect} ->
-        {:ok, view, _html} = follow_redirect(redirect.follow, conn)
-
-        show =
-          view
-          # relying on the fact that subjects are ordered by id in asc order
-          |> element("table tr:last-child td:first-child")
-          |> render_click()
-
-        {:error, {:live_redirect, %{kind: :push, to: to}}} = show
-
-        id =
-          to
-          |> Path.basename()
-          |> String.to_integer()
-
-        {:ok, _view, html} = follow_redirect(show, conn)
-
-        {:ok,
-         html
-         |> parse_subject()
-         |> Map.put(:id, id)}
-
-      {:stay, html} ->
-        {:error, parse_submit_errors(html)}
-    end
-  end
-
   defp submit_new_subject(conn, override \\ []) do
     conn
     |> new_subject_view()
     |> submit_subject(subject_params(override))
-  end
-
-  defp new_subject_view(conn) do
-    conn = get(conn, "/admin/subjects/new")
-    {:ok, view, _html} = live(conn)
-
-    view
   end
 
   # -----------------------------------------------------------------------
@@ -372,36 +303,6 @@ defmodule SubjectManagerWeb.SubjectLiveAdminTest do
   # Submit & Upload
   # -----------------------------------------------------------------------
 
-  defp submit_subject(view, params) do
-    view
-    |> element("form")
-    |> render_submit(%{"subject" => stringify(params)})
-    |> case do
-      {:error, {:live_redirect, data}} = follow ->
-        {:redirect, %{data: data, follow: follow}}
-
-      content ->
-        {:stay, content}
-    end
-  end
-
-  defp parse_submit_errors(html) do
-    items = Floki.find(html, "form div")
-
-    Enum.reduce(items, %{}, fn item, acc ->
-      case Floki.children(item) do
-        [label, _input, error_block] ->
-          label_name = label |> Floki.text() |> String.trim()
-          name = Map.fetch!(@labels_to_fields_assoc, label_name)
-          error = error_block |> Floki.text() |> String.trim()
-          Map.put(acc, name, error)
-
-        _ ->
-          acc
-      end
-    end)
-  end
-
   defp upload_image(view, file_path) do
     file_path = if is_nil(file_path), do: "test/support/images/test.jpg", else: file_path
 
@@ -433,7 +334,7 @@ defmodule SubjectManagerWeb.SubjectLiveAdminTest do
       |> Enum.drop(-1)
       |> Enum.map(fn label_block ->
         label = Floki.text(label_block)
-        Map.fetch!(@labels_to_fields_assoc, label)
+        Map.fetch!(labels_to_fields_assoc(), label)
       end)
 
     Enum.map(rows, fn row ->
@@ -447,29 +348,6 @@ defmodule SubjectManagerWeb.SubjectLiveAdminTest do
         {field, value}
       end)
     end)
-  end
-
-  defp parse_subject(subject_show_html) do
-    [{"div", _, [_link, {"div", _, [img, dl_block]}, outside_block]}] =
-      Floki.find(subject_show_html, ".subject-show")
-
-    [image_path] = Floki.attribute(img, "src")
-
-    list = [outside_block | Floki.find(dl_block, ".flex")]
-
-    parsed =
-      Map.new(list, fn div ->
-        [field, value] = Floki.children(div)
-        {Floki.text(field), Floki.text(value)}
-      end)
-
-    %{
-      name: Map.fetch!(parsed, "Name"),
-      team: Map.fetch!(parsed, "Team"),
-      bio: Map.fetch!(parsed, "Bio"),
-      image_path: image_path,
-      position: parsed |> Map.fetch!("Position") |> String.to_existing_atom()
-    }
   end
 
   # -----------------------------------------------------------------------
@@ -490,11 +368,5 @@ defmodule SubjectManagerWeb.SubjectLiveAdminTest do
     end)
 
     initial_images
-  end
-
-  defp unique_positive_integer, do: :erlang.unique_integer([:positive, :monotonic])
-
-  defp stringify(params) do
-    Map.new(params, fn {key, value} -> {Atom.to_string(key), to_string(value)} end)
   end
 end
