@@ -197,24 +197,15 @@ defmodule SubjectManagerWeb.SubjectLive.Admin.Form do
 
   defp save_file(entry, subject_name, socket) do
     consume_uploaded_entry(socket, entry, fn %{path: path} ->
-      dest = Path.join(Subjects.images_path(), new_filename(subject_name, entry.client_name))
+      dest =
+        Path.join(
+          Subjects.images_path(),
+          Subjects.new_filename(subject_name, entry.client_name)
+        )
+
       File.cp!(path, dest)
       {:ok, dest}
     end)
-  end
-
-  defp new_filename(subject_name, client_filename) do
-    timestamp = System.os_time()
-    random_string = Base.encode16(:crypto.strong_rand_bytes(8))
-    filename = "#{subject_name}_#{timestamp}_#{random_string}"
-
-    case Path.extname(client_filename) do
-      "" ->
-        filename
-
-      ext ->
-        "#{filename}#{ext}"
-    end
   end
 
   defp positions do

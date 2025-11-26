@@ -12,7 +12,7 @@ defmodule SubjectManager.Subjects do
         }
 
   @type upsert_params :: %{
-          name: String.t(),
+          name: Subject.name(),
           team: String.t(),
           position: Subject.position(),
           bio: String.t() | nil,
@@ -78,6 +78,21 @@ defmodule SubjectManager.Subjects do
     end
 
     :ok
+  end
+
+  @spec new_filename(Subject.name(), String.t()) :: String.t()
+  def new_filename(subject_name, client_filename) do
+    timestamp = System.os_time()
+    random_string = Base.encode16(:crypto.strong_rand_bytes(8))
+    filename = "#{subject_name}_#{timestamp}_#{random_string}"
+
+    case Path.extname(client_filename) do
+      "" ->
+        filename
+
+      ext ->
+        "#{filename}#{ext}"
+    end
   end
 
   @spec images_path :: Path.t()

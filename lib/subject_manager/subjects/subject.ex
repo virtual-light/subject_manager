@@ -4,6 +4,7 @@ defmodule SubjectManager.Subjects.Subject do
 
   @type t :: %__MODULE__{}
   @type id :: pos_integer()
+  @type name :: String.t()
 
   @type position :: :forward | :midfielder | :winger | :defender | :goalkeeper
 
