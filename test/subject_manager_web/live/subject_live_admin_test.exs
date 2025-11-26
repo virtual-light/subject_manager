@@ -2,7 +2,7 @@ defmodule SubjectManagerWeb.SubjectLiveAdminTest do
   use SubjectManagerWeb.ConnCase, async: true
   import Phoenix.LiveViewTest
 
-  @images_path "priv/static/images"
+  alias SubjectManager.Subjects
 
   @labels_to_fields_assoc Map.new(
                             ~w(name bio team position)a,
@@ -76,7 +76,7 @@ defmodule SubjectManagerWeb.SubjectLiveAdminTest do
 
       {:error, _} = create_subject_with_upload(conn, name: "")
 
-      assert File.ls!(@images_path) == initial_images
+      assert File.ls!(Subjects.images_path()) == initial_images
     end
   end
 
@@ -108,7 +108,7 @@ defmodule SubjectManagerWeb.SubjectLiveAdminTest do
 
       delete_subject(conn, subject.id)
 
-      assert File.ls!(@images_path) == initial_images
+      assert File.ls!(Subjects.images_path()) == initial_images
     end
   end
 
@@ -153,7 +153,7 @@ defmodule SubjectManagerWeb.SubjectLiveAdminTest do
 
       assert image_path != updated_image_path
 
-      refute Path.basename(image_path) in File.ls!(@images_path)
+      refute Path.basename(image_path) in File.ls!(Subjects.images_path())
 
       assert File.exists?(Path.join("priv/static", updated_image_path))
     end
@@ -172,7 +172,7 @@ defmodule SubjectManagerWeb.SubjectLiveAdminTest do
 
       assert updated_subject.image_path != subject.image_path
 
-      assert initial_images == File.ls!(@images_path)
+      assert initial_images == File.ls!(Subjects.images_path())
     end
 
     test "renders error when name is empty", %{conn: conn} do
@@ -206,11 +206,11 @@ defmodule SubjectManagerWeb.SubjectLiveAdminTest do
 
       %{id: id} = create_subject_with_upload!(conn)
 
-      images_before_update = File.ls!(@images_path)
+      images_before_update = File.ls!(Subjects.images_path())
 
       {:error, _} = update_subject_with_upload(conn, id, file_path, %{name: ""})
 
-      assert File.ls!(@images_path) == images_before_update
+      assert File.ls!(Subjects.images_path()) == images_before_update
     end
   end
 
@@ -477,13 +477,13 @@ defmodule SubjectManagerWeb.SubjectLiveAdminTest do
   # -----------------------------------------------------------------------
 
   defp setup_images_cleanup_on_exit() do
-    initial_images = File.ls!(@images_path)
+    initial_images = File.ls!(Subjects.images_path())
 
     on_exit(fn ->
-      images = File.ls!(@images_path)
+      images = File.ls!(Subjects.images_path())
 
       Enum.each(images -- initial_images, fn filename ->
-        @images_path
+        Subjects.images_path()
         |> Path.join(filename)
         |> File.rm!()
       end)

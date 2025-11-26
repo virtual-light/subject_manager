@@ -9,7 +9,8 @@ import Config
 
 config :subject_manager,
   ecto_repos: [SubjectManager.Repo],
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  images_dirname: "images"
 
 # Configures the endpoint
 config :subject_manager, SubjectManagerWeb.Endpoint,

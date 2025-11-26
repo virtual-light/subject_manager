@@ -197,7 +197,7 @@ defmodule SubjectManagerWeb.SubjectLive.Admin.Form do
 
   defp save_file(entry, subject_name, socket) do
     consume_uploaded_entry(socket, entry, fn %{path: path} ->
-      dest = Path.join("priv/static/images", new_filename(subject_name, entry.client_name))
+      dest = Path.join(Subjects.images_path(), new_filename(subject_name, entry.client_name))
       File.cp!(path, dest)
       {:ok, dest}
     end)

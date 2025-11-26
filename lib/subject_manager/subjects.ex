@@ -80,6 +80,14 @@ defmodule SubjectManager.Subjects do
     :ok
   end
 
+  @spec images_path :: Path.t()
+  def images_path do
+    Path.join(
+      static_dir(),
+      Application.fetch_env!(:subject_manager, :images_dirname)
+    )
+  end
+
   defp apply_params(query, params) do
     query
     |> maybe_filter(params)
@@ -125,8 +133,14 @@ defmodule SubjectManager.Subjects do
   end
 
   defp delete_image(image_path) do
-    [:code.priv_dir(:subject_manager), "static", image_path]
-    |> Path.join()
+    static_dir()
+    |> Path.join(image_path)
     |> File.rm!()
+  end
+
+  defp static_dir do
+    :subject_manager
+    |> :code.priv_dir()
+    |> Path.join("static")
   end
 end
