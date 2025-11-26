@@ -11,10 +11,10 @@ defmodule SubjectManagerWeb.SubjectLiveTest do
       conn = get(conn, "/subjects")
       {:ok, _view, html} = live(conn)
 
-      parsed_sbujects = parse_subjects(html)
+      parsed_subjects = parse_subjects(html)
 
       assert MapSet.new(subjects, &Map.take(&1, [:name, :team, :position])) ==
-               MapSet.new(parsed_sbujects)
+               MapSet.new(parsed_subjects)
     end
 
     test "filtered by position", %{conn: conn} do
