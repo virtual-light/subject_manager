@@ -18,6 +18,15 @@ defmodule SubjectManagerWeb.SubjectLiveHelper do
   @type subject_create_otps :: [{:view, view()} | overrides()]
 
   @type subject :: %{
+          id: integer(),
+          name: String.t(),
+          team: String.t(),
+          position: atom(),
+          bio: String.t(),
+          image_path: String.t()
+        }
+
+  @type parsed_subject :: %{
           name: String.t(),
           team: String.t(),
           position: atom(),
@@ -63,7 +72,7 @@ defmodule SubjectManagerWeb.SubjectLiveHelper do
     subject
   end
 
-  @spec create_subject!(Plug.Conn.t(), subject_create_otps()) ::
+  @spec create_subject(Plug.Conn.t(), subject_create_otps()) ::
           {:ok, subject()} | {:error, errors()}
   def create_subject(conn, params) do
     {view, override} = Keyword.pop(params, :view)
@@ -112,9 +121,9 @@ defmodule SubjectManagerWeb.SubjectLiveHelper do
     view
   end
 
-  @spec submit_subject(view(), subject()) ::
+  @spec submit_subject(view(), subject_params()) ::
           {:redirect, %{data: follow_redirect_opts(), follow: follow_redirect()}}
-          | {:stay, html()}
+          | {:stay, binary()}
   def submit_subject(view, params) do
     view
     |> element("form")
@@ -146,7 +155,7 @@ defmodule SubjectManagerWeb.SubjectLiveHelper do
     end)
   end
 
-  @spec parse_subject(Floki.html_tree() | Floki.html_node()) :: subject()
+  @spec parse_subject(Floki.html_tree() | Floki.html_node()) :: parsed_subject()
   def parse_subject(subject_show_html) do
     [{"div", _, [_link, {"div", _, [img, dl_block]}, outside_block]}] =
       Floki.find(subject_show_html, ".subject-show")

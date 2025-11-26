@@ -42,7 +42,7 @@ defmodule SubjectManager.Subjects do
     |> Repo.all()
   end
 
-  @spec positions() :: %{required(Subject.position()) => String.t()}
+  @spec positions() :: [{Subject.position(), String.t()}]
   def positions, do: Ecto.Enum.mappings(Subject, :position)
 
   @spec create(upsert_params()) :: Subject.t()
