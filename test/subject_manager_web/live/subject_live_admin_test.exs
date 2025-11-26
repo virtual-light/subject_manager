@@ -354,7 +354,7 @@ defmodule SubjectManagerWeb.SubjectLiveAdminTest do
   # Misc
   # -----------------------------------------------------------------------
 
-  defp setup_images_cleanup_on_exit() do
+  defp setup_images_cleanup_on_exit do
     initial_images = File.ls!(Subjects.images_path())
 
     on_exit(fn ->
