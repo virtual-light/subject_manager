@@ -20,6 +20,10 @@ defmodule SubjectManagerWeb.Router do
     live("/", SubjectLive.Index)
     live("/subjects", SubjectLive.Index)
     live "/subjects/:id", SubjectLive.Show, :show
+
+    live "/admin/subjects/", SubjectLive.Admin.Index
+    live "/admin/subjects/new", SubjectLive.Admin.Form, :new
+    live "/admin/subjects/:id/edit", SubjectLive.Admin.Form, :edit
   end
 
   # Other scopes may use custom stacks.

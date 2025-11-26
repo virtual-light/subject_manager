@@ -17,6 +17,9 @@ defmodule SubjectManager.Subjects.Subject do
     timestamps(type: :utc_datetime)
   end
 
+  @spec default_image_path :: String.t()
+  def default_image_path, do: %__MODULE__{}.image_path
+
   @doc false
   def changeset(incident, attrs) do
     incident
