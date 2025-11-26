@@ -17,8 +17,8 @@ defmodule SubjectManagerWeb.Router do
   scope "/", SubjectManagerWeb do
     pipe_through :browser
 
-    live("/", SubjectLive.Index)
-    live("/subjects", SubjectLive.Index)
+    live "/", SubjectLive.Index
+    live "/subjects", SubjectLive.Index
     live "/subjects/:id", SubjectLive.Show, :show
 
     live "/admin/subjects/", SubjectLive.Admin.Index
