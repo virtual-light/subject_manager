@@ -88,20 +88,17 @@ defmodule SubjectManagerWeb.SubjectLiveHelper do
       {:redirect, redirect} ->
         {:ok, view, _html} = follow_redirect(redirect.follow, conn)
 
-        show =
-          view
-          # relying on the fact that subjects are ordered by id in asc order
-          |> element("table tr:last-child td:first-child")
-          |> render_click()
-
-        {:error, {:live_redirect, %{kind: :push, to: to}}} = show
+        # relying on the fact that subjects are ordered by id in asc order
+        show_redirect = get_redirect_to_last_subject_for_admin(view)
+        {:error, {:live_redirect, %{kind: :push, to: to}}} = show_redirect
 
         id =
           to
-          |> Path.basename()
+          |> URI.parse()
+          |> then(fn uri -> Path.basename(uri.path) end)
           |> String.to_integer()
 
-        {:ok, _view, html} = follow_redirect(show, conn)
+        {:ok, _view, html} = follow_redirect(show_redirect, conn)
 
         {:ok,
          html
@@ -119,6 +116,13 @@ defmodule SubjectManagerWeb.SubjectLiveHelper do
     {:ok, view, _html} = live(conn)
 
     view
+  end
+
+  @spec get_redirect_to_last_subject_for_admin(view()) :: follow_redirect()
+  def get_redirect_to_last_subject_for_admin(view) do
+    view
+    |> element("table tr:last-child td:first-child")
+    |> render_click()
   end
 
   @spec submit_subject(view(), subject_params()) ::

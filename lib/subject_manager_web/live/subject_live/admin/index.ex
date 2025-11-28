@@ -41,7 +41,7 @@ defmodule SubjectManagerWeb.SubjectLive.Admin.Index do
       id="subjects"
       rows={@subjects}
       row_id={fn subject -> "subject-#{subject.id}" end}
-      row_click={fn subject -> JS.navigate(~p"/subjects/#{subject}") end}
+      row_click={fn subject -> JS.navigate(~p"/subjects/#{subject}?return_to=admin") end}
     >
       <:col :let={subject} label="Name">{subject.name}</:col>
       <:col :let={subject} label="Team">{subject.team}</:col>

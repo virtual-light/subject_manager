@@ -8,7 +8,7 @@ defmodule SubjectManagerWeb.SubjectLive.Show do
     ~H"""
     <div class="subject-show">
       <.link
-        href={~p"/subjects"}
+        navigate={@return_to}
         class="mb-4 inline-block px-4 py-2 text-sm font-semibold text-blue-600 hover:text-blue-800 border border-blue-600 rounded hover:bg-blue-50 transition duration-150"
       >
         &larr; Back to Subjects
@@ -36,16 +36,20 @@ defmodule SubjectManagerWeb.SubjectLive.Show do
   end
 
   @impl true
-  def mount(%{"id" => str}, _session, socket) do
+  def mount(%{"id" => str} = params, _session, socket) do
     case Integer.parse(str) do
       {id, ""} when id > 0 ->
         {:ok,
          socket
          |> assign(:page_title, "Show Subjects")
+         |> assign(:return_to, return_to(params))
          |> assign(:subject, Subjects.get!(id))}
 
       _ ->
         raise Plug.BadRequestError, message: "Invalid ID provided"
     end
   end
+
+  defp return_to(%{"return_to" => "admin"}), do: ~p"/admin/subjects"
+  defp return_to(_), do: ~p"/subjects"
 end

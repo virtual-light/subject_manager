@@ -151,19 +151,41 @@ defmodule SubjectManagerWeb.SubjectLiveTest do
       assert Map.delete(subject, :id) == parse_subject(html)
     end
 
-    test "renders back to subjects", %{conn: conn} do
-      %{id: id} = create_subject!(conn)
-      conn = get(conn, "/subjects/#{id}")
+    test "redirects back to subjects", %{conn: conn} do
+      create_subject!(conn)
 
+      conn = get(conn, "/subjects")
       {:ok, view, _html} = live(conn)
 
-      assert has_element?(view, "a", "Back")
+      {:ok, view, _html} =
+        view
+        |> element("#subjects > :last-child")
+        |> render_click()
+        |> follow_redirect(conn)
 
       view
       |> element("a", "Back")
       |> render_click()
 
       assert_redirected(view, "/subjects")
+    end
+
+    test "redirects back to admin/subjects", %{conn: conn} do
+      create_subject!(conn)
+
+      conn = get(conn, "/admin/subjects")
+      {:ok, view, _html} = live(conn)
+
+      {:ok, view, _html} =
+        view
+        |> get_redirect_to_last_subject_for_admin()
+        |> follow_redirect(conn)
+
+      view
+      |> element("a", "Back")
+      |> render_click()
+
+      assert_redirected(view, "/admin/subjects")
     end
 
     test "returns 404 for non-existing id", %{conn: conn} do
