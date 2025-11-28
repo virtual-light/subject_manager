@@ -47,8 +47,8 @@ defmodule SubjectManagerWeb.SubjectLiveHelper do
           optional(:position) => String.t()
         }
 
-  @type follow_redirect_opts :: %{to: Path.t()}
-  @type follow_redirect :: {:error, {:live_redirect, follow_redirect_opts()}}
+  @type redirect_opts :: %{to: Path.t(), kind: :push | :patch | :replace}
+  @type redirect :: {:error, {:live_redirect, redirect_opts()}}
   @type html() :: binary()
 
   @spec subject_params(overrides()) :: subject_params()
@@ -118,7 +118,7 @@ defmodule SubjectManagerWeb.SubjectLiveHelper do
     view
   end
 
-  @spec get_redirect_to_last_subject_for_admin(view()) :: follow_redirect()
+  @spec get_redirect_to_last_subject_for_admin(view()) :: redirect()
   def get_redirect_to_last_subject_for_admin(view) do
     view
     |> element("table tr:last-child td:first-child")
@@ -126,7 +126,7 @@ defmodule SubjectManagerWeb.SubjectLiveHelper do
   end
 
   @spec submit_subject(view(), subject_params()) ::
-          {:redirect, %{data: follow_redirect_opts(), follow: follow_redirect()}}
+          {:redirect, %{data: redirect_opts(), follow: redirect()}}
           | {:stay, binary()}
   def submit_subject(view, params) do
     view
