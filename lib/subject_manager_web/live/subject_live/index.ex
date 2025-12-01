@@ -5,19 +5,27 @@ defmodule SubjectManagerWeb.SubjectLive.Index do
   alias SubjectManager.Subjects.Subject
   import SubjectManagerWeb.CustomComponents
 
-  def mount(query_params, _session, socket) do
-    socket =
-      socket
-      |> assign(page_title: "Subjects")
-      |> assign(form: to_form(%{}))
+  def mount(_params, _session, socket) do
+    {:ok,
+     socket
+     |> assign(page_title: "Subjects")
+     |> assign(form: to_form(%{}))
+     |> assign(subjects: [])}
+  end
 
-    case normalize_params(query_params) do
+  def handle_params(params, _uri, socket) do
+    case normalize_params(params) do
       {:ok, params} ->
-        {:ok, assign(socket, subjects: Subjects.list_subjects(params))}
+        {:noreply, assign(socket, subjects: Subjects.list_subjects(params))}
 
       _ ->
-        {:ok, assign(socket, subjects: [])}
+        {:noreply, socket}
     end
+  end
+
+  def handle_event("apply_filters", params, socket) do
+    params = Map.take(params, ~w(q position sort_by))
+    {:noreply, push_patch(socket, to: ~p"/subjects?#{params}")}
   end
 
   def render(assigns) do
@@ -59,8 +67,8 @@ defmodule SubjectManagerWeb.SubjectLive.Index do
 
   def filter_form(assigns) do
     ~H"""
-    <.form for={@form} id="filter-form">
-      <.input field={@form[:q]} placeholder="Search..." autocomplete="off" />
+    <.form for={@form} id="filter-form" phx-change="apply_filters">
+      <.input field={@form[:q]} placeholder="Search..." autocomplete="off" phx-debounce="350" />
       <.input
         type="select"
         field={@form[:position]}
