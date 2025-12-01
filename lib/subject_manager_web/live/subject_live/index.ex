@@ -9,17 +9,19 @@ defmodule SubjectManagerWeb.SubjectLive.Index do
     {:ok,
      socket
      |> assign(page_title: "Subjects")
-     |> assign(form: to_form(%{}))
      |> assign(subjects: [])}
   end
 
-  def handle_params(params, _uri, socket) do
-    case normalize_params(params) do
+  def handle_params(raw_params, _uri, socket) do
+    case normalize_params(raw_params) do
       {:ok, params} ->
-        {:noreply, assign(socket, subjects: Subjects.list_subjects(params))}
+        {:noreply,
+         socket
+         |> assign(form: to_form(raw_params))
+         |> assign(subjects: Subjects.list_subjects(params))}
 
       _ ->
-        {:noreply, socket}
+        {:noreply, assign(socket, form: to_form(%{}))}
     end
   end
 
