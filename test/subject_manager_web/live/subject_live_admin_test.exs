@@ -45,7 +45,7 @@ defmodule SubjectManagerWeb.SubjectLiveAdminTest do
       assert {:ok, {%{image_path: image_path}, file_content}} =
                create_subject_with_upload(conn, params: params)
 
-      assert image_path != Subjects.Subject.default_image_path()
+      refute image_path == Subjects.subject_image_placeholder()
 
       assert File.read!(Path.join("priv/static", image_path)) == file_content
     end

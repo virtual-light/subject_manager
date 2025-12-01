@@ -12,8 +12,9 @@ defmodule SubjectManagerWeb.SubjectLive.Admin.Form do
       <.input field={@form[:position]} type="select" label="Position" options={@positions} />
       <.input field={@form[:bio]} type="textarea" label="Bio" />
       <%= if @subject.image_path && @uploads.avatar.entries == [] do %>
-        <div class="upload-entry" flex items-start gap-2>
+        <div class="upload-entry flex items-start gap-2">
           <img src={@subject.image_path} width="100" />
+
           <button
             type="button"
             phx-click="drop-avatar"

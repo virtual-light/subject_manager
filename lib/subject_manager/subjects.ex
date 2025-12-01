@@ -47,11 +47,6 @@ defmodule SubjectManager.Subjects do
 
   @spec create(upsert_params()) :: Subject.t()
   def create(params) do
-    params =
-      Map.update!(params, :image_path, fn path ->
-        if is_nil(path), do: Subject.default_image_path(), else: path
-      end)
-
     %Subject{}
     |> Ecto.Changeset.change(params)
     |> Repo.insert!()
@@ -60,12 +55,6 @@ defmodule SubjectManager.Subjects do
   @spec update!(Subject.id(), upsert_params()) :: :ok
   def update!(id, params) do
     subject = get!(id)
-    default_path = Subject.default_image_path()
-
-    params =
-      Map.update!(params, :image_path, fn path ->
-        if is_nil(path), do: default_path, else: path
-      end)
 
     changeset = Ecto.Changeset.change(subject, params)
 
@@ -73,7 +62,7 @@ defmodule SubjectManager.Subjects do
 
     old_image_path = subject.image_path
 
-    if Ecto.Changeset.changed?(changeset, :image_path) and old_image_path != default_path do
+    if Ecto.Changeset.changed?(changeset, :image_path) and not is_nil(old_image_path) do
       delete_image(old_image_path)
     end
 
@@ -93,6 +82,18 @@ defmodule SubjectManager.Subjects do
       ext ->
         "#{filename}#{ext}"
     end
+  end
+
+  @spec subject_image_path_or_placeholder(Subject.t()) :: Path.t()
+  def subject_image_path_or_placeholder(%{image_path: image_path}) do
+    if is_nil(image_path), do: subject_image_placeholder(), else: image_path
+  end
+
+  @spec subject_image_placeholder :: Path.t()
+  def subject_image_placeholder do
+    :subject_manager
+    |> Application.fetch_env!(SubjectManager.Subjects)
+    |> Keyword.fetch!(:subject_image_placeholder)
   end
 
   @spec images_path :: Path.t()
@@ -142,7 +143,7 @@ defmodule SubjectManager.Subjects do
   end
 
   defp maybe_delete_image(image_path) do
-    if not is_nil(image_path) and image_path != Subject.default_image_path() do
+    unless is_nil(image_path) do
       delete_image(image_path)
     end
   end

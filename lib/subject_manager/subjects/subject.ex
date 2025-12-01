@@ -13,13 +13,10 @@ defmodule SubjectManager.Subjects.Subject do
     field :team, :string
     field :position, Ecto.Enum, values: [:forward, :midfielder, :winger, :defender, :goalkeeper]
     field :bio, :string
-    field :image_path, :string, default: "/images/placeholder.jpg"
+    field :image_path, :string
 
     timestamps(type: :utc_datetime)
   end
-
-  @spec default_image_path :: String.t()
-  def default_image_path, do: %__MODULE__{}.image_path
 
   @doc false
   def changeset(incident, attrs) do

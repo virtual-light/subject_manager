@@ -42,7 +42,7 @@ defmodule SubjectManagerWeb.SubjectLive.Index do
     ~H"""
     <.link navigate={~p"/subjects/#{@subject}"} id={@dom_id}>
       <div class="card">
-        <img src={@subject.image_path} />
+        <img src={Subjects.subject_image_path_or_placeholder(@subject)} />
         <h2>{@subject.name}</h2>
         <div class="details">
           <div class="team">

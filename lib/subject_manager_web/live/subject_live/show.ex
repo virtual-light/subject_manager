@@ -16,7 +16,7 @@ defmodule SubjectManagerWeb.SubjectLive.Show do
 
       <div class="subject md:grid md:grid-cols-3 md:gap-8">
         <img
-          src={@subject.image_path}
+          src={Subjects.subject_image_path_or_placeholder(@subject)}
           class="h-40 w-70 object-cover transition duration-500 group-hover:scale-105 sm:h-72"
         />
 

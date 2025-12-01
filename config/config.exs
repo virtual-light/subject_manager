@@ -12,6 +12,9 @@ config :subject_manager,
   generators: [timestamp_type: :utc_datetime],
   images_dirname: "images"
 
+config :subject_manager, SubjectManager.Subjects,
+  subject_image_placeholder: "/images/placeholder.jpg"
+
 # Configures the endpoint
 config :subject_manager, SubjectManagerWeb.Endpoint,
   url: [host: "localhost"],
